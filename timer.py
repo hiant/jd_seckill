@@ -3,7 +3,7 @@ import time
 import requests
 import json
 
-from datetime import datetime
+import datetime
 from jd_logger import logger
 from config import global_config
 
@@ -11,7 +11,21 @@ from config import global_config
 class Timer(object):
     def __init__(self, sleep_interval=0.5):
         # '2018-09-28 22:45:50.000'
-        self.buy_time = datetime.strptime(global_config.getRaw('config','buy_time'), "%Y-%m-%d %H:%M:%S.%f")
+        date_now = datetime.datetime.now()
+        today_str = datetime.datetime.strftime(date_now,"%Y-%m-%d")
+        tmp_buy_time = datetime.datetime.strptime(today_str + ' ' + global_config.getRaw('config', 'buy_time'),
+                                         "%Y-%m-%d %H:%M:%S.%f")
+        tmp_buy_time_ms = int(time.mktime(tmp_buy_time.timetuple()) * 1000.0 + tmp_buy_time.microsecond / 1000)
+        tmp_now_ms = int(time.mktime(date_now.timetuple()) * 1000.0 + date_now.microsecond / 1000)
+        if tmp_now_ms > (tmp_buy_time_ms + 2 * 60 * 1000):
+            next_date = date_now + datetime.timedelta(days=1)
+            next_date_str = datetime.datetime.strftime(next_date,"%Y-%m-%d")
+            next_tmp_buy_time = datetime.datetime.strptime(next_date_str + ' ' + global_config.getRaw('config', 'buy_time'),
+                                                  "%Y-%m-%d %H:%M:%S.%f")
+            self.buy_time = next_tmp_buy_time
+        else:
+            self.buy_time = tmp_buy_time
+
         self.buy_time_ms = int(time.mktime(self.buy_time.timetuple()) * 1000.0 + self.buy_time.microsecond / 1000)
         self.sleep_interval = sleep_interval
 
